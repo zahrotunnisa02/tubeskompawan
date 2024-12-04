@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cari Kafe Terdekat</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+</head>
+<body>
+  <div class="container">
+    <h1>Cari Kafe di Lokasi yang Diinginkan</h1>
+    <div class="search-section">
+        <button id="currentLocationButton">Gunakan Lokasi Saya</button>
+        <input type="text" id="locationInput" placeholder="Masukkan lokasi (contoh: Jakarta)" />
+        <button id="searchButton">Cari Kafe</button>
+      </div>
+    <div id="map"></div>
+    <ul id="cafeList"></ul>
+  </div>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="script.js"></script>
+</body>
+</html>
