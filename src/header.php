@@ -20,8 +20,8 @@
                 </a>
             </li>
             <li>
-                <a href="product.php">
-                    <p class="text-16 dark-gray">Product</p>
+                <a href="tambahcafe.php">
+                    <p class="text-16 dark-gray">Tambah cafe</p>
                 </a>
             </li>
             <?php
