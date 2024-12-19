@@ -1,25 +1,46 @@
 pipeline {
     agent any
+
+    environment {
+        IMAGE_NAME = "tubes-komputasiawan" // Nama image Docker
+        CONTAINER_NAME = "tubes-komputasiawan-container" // Nama container
+        PORT = "8082:80" // Port mapping (host:container)
+    }
+
     stages {
-        stage('Inisiasi dari GitHub') {
+        stage('Ini Pipeline Kelompok Saya') {
             steps {
-                echo "Ini Jenkins pipeline kelompok saya"
+                echo 'Pipeline ini dibuat oleh kelompok saya untuk menjalankan Docker.'
             }
         }
-        stage('Dockerfile Agent Test') {
-            steps {
-                script {
-                    // Konversi workspace path ke Linux-style
-                    def workspacePath = pwd().replaceAll('C:', '/c').replaceAll('\\\\', '/')
-                    echo "Workspace Path: ${workspacePath}"
 
-                    // Jalankan container menggunakan image 'tubes-komputasiawan'
-                    docker.image('tubes-komputasiawan').inside("-v ${workspacePath}:/workspace") {
-                        sh 'node --version'
-                        sh 'svn --version'
-                    }
+        stage('Build Image Docker Tubes Komputasiawan') {
+            steps {
+                echo 'Building Docker image...'
+                script {
+                    // Build Docker image dari Dockerfile
+                    bat "docker build -t ${IMAGE_NAME} ."
                 }
             }
+        }
+
+        stage('Jalankan Container Docker') {
+            steps {
+                echo 'Running Docker container...'
+                script {
+                    // Jalankan container dari image yang sudah dibuild
+                    bat "docker run -d --name ${CONTAINER_NAME} -p ${PORT} ${IMAGE_NAME}"
+                }
+            }
+        }
+    }
+
+    post {
+        always {
+            echo 'Pipeline selesai dijalankan.'
+        }
+        failure {
+            echo 'Pipeline gagal dijalankan.'
         }
     }
 }
