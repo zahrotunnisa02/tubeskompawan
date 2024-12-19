@@ -12,7 +12,7 @@ pipeline {
             steps {
                 script {
                     echo "Membangun Docker image: ${IMAGE_NAME}:latest"
-                    docker.build("${IMAGE_NAME}:latest", ".") // Build image menggunakan Dockerfile di root
+                    bat "docker build -t ${IMAGE_NAME}:latest ."
                 }
             }
         }
@@ -22,13 +22,13 @@ pipeline {
                 script {
                     // Hentikan container jika sudah ada sebelumnya
                     echo "Memastikan tidak ada container dengan nama yang sama berjalan..."
-                    sh """
-                    docker ps -q --filter "name=${CONTAINER_NAME}" | grep -q . && docker stop ${CONTAINER_NAME} && docker rm ${CONTAINER_NAME} || true
+                    bat """
+                    docker ps -q --filter "name=${CONTAINER_NAME}" && docker stop ${CONTAINER_NAME} && docker rm ${CONTAINER_NAME} || echo Container tidak ditemukan
                     """
 
                     // Jalankan container menggunakan image yang telah dibuat
                     echo "Menjalankan container ${CONTAINER_NAME}..."
-                    sh """
+                    bat """
                     docker run -d --name ${CONTAINER_NAME} -p ${PORT} ${IMAGE_NAME}:latest
                     """
                 }
@@ -40,7 +40,7 @@ pipeline {
                 script {
                     // Jalankan perintah testing di dalam container
                     echo "Melakukan pengujian aplikasi di dalam container ${CONTAINER_NAME}..."
-                    sh """
+                    bat """
                     docker exec ${CONTAINER_NAME} node --version || echo "Node.js tidak ditemukan"
                     docker exec ${CONTAINER_NAME} php artisan --version || echo "Laravel tidak ditemukan"
                     """
