@@ -3,7 +3,7 @@ pipeline {
 
     environment {
         IMAGE_NAME = "tubes-komputasiawan"       // Nama image Docker
-        CONTAINER_NAME = "tubes-komputasiawan-container" // Nama container
+        CONTAINER_NAME = "tubeskomputasiawan" // Nama container
         PORT = "8082:80"                        // Port mapping (host:container)
     }
 
@@ -35,16 +35,14 @@ pipeline {
             }
         }
 
-        stage('Test Application') {
+       stage('Start Services with Docker Compose') {
             steps {
                 script {
-                    echo "Memeriksa apakah Apache berjalan di dalam container..."
-                    bat """
-                    docker exec tubes-komputasiawan-container ps aux | grep apache2 || echo "Apache tidak berjalan"
-                    """
+                    echo "Menjalankan layanan dengan Docker Compose..."
+                    // Menjalankan container menggunakan docker-compose
+                    bat "docker-compose -f docker-compose.yml up -d"
                 }
             }
-        }
     }
 
     post {
