@@ -34,16 +34,6 @@ pipeline {
                 }
             }
         }
-
-        stage('Start Services with Docker Compose') {
-            steps {
-                script {
-                    echo "Menjalankan layanan dengan Docker Compose..."
-                    // Pastikan file docker-compose.yml ada di lokasi yang benar
-                    bat "docker-compose -f docker-compose.yml up -d"
-                }
-            }
-        }
     }
 
     post {
