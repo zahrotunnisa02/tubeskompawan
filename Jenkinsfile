@@ -8,7 +8,7 @@ pipeline {
         DB_USER = "root" // User database
         DB_PASSWORD = "123456" // Password database
         DB_NAME = "komputasi_awan" // Nama database
-        SQL_FILE = "./tubesweb.sql" // Path ke file SQL yang ingin diimpor
+        SQL_FILE = "tubesweb.sql" // Path ke file SQL yang ingin diimpor
     }
 
     stages {
