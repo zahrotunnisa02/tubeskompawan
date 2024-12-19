@@ -3,7 +3,7 @@ pipeline {
 
     environment {
         IMAGE_NAME = "tubes-komputasiawan"       // Nama image Docker
-        CONTAINER_NAME = "tubeskomputasiawan"    // Nama container
+        CONTAINER_NAME = "tubes-komputasiawan-container"    // Nama container
         PORT = "8082:80"                         // Port mapping (host:container)
     }
 
