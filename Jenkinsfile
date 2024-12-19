@@ -31,6 +31,20 @@ pipeline {
             }
         }
 
+        stage('Ensure DB Container is Running') {
+            steps {
+                echo 'Ensuring the database container is running...'
+                script {
+                    // Cek apakah container DB berjalan, jika tidak jalankan
+                    def status = bat(script: "docker ps -q -f name=${DB_CONTAINER}", returnStdout: true).trim()
+                    if (status == "") {
+                        echo "Starting the database container..."
+                        bat "docker-compose up -d ${DB_CONTAINER}"
+                    }
+                }
+            }
+        }
+
         stage('Database Import') {
             steps {
                 echo 'Importing database...'
