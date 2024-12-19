@@ -21,16 +21,28 @@ pipeline {
 
         stage('Build and Start Services') {
             steps {
-        echo 'Importing database...'
-        script {
-            // Salin file SQL ke dalam container MySQL
-            bat "docker cp ${SQL_FILE} ${DB_CONTAINER}:/tubesweb.sql"
-            
-            // Mengimpor file SQL ke dalam database MySQL
-            bat """
-            docker exec ${DB_CONTAINER} mysql -u${DB_USER} -p${DB_PASSWORD} ${DB_NAME} < /tubesweb.sql || exit 1
-            """
+                echo 'Building and starting services with Docker Compose...'
+                script {
+                    // Hentikan jika container sedang berjalan
+                    bat 'docker-compose down || true'
+                    // Build ulang dan jalankan container
+                    bat 'docker-compose up -d --build'
+                }
+            }
         }
+
+        stage('Database Import') {
+            steps {
+                echo 'Importing database...'
+                script {
+                    // Salin file SQL ke dalam container MySQL
+                    bat "docker cp ${SQL_FILE} ${DB_CONTAINER}:/tmp/tubesweb.sql"
+
+                    // Mengimpor file SQL ke dalam database MySQL
+                    bat """
+                    docker exec ${DB_CONTAINER} mysql -u${DB_USER} -p${DB_PASSWORD} ${DB_NAME} < /tmp/tubesweb.sql || exit 1
+                    """
+                }
             }
         }
 
@@ -42,21 +54,6 @@ pipeline {
                     bat 'powershell -Command "Start-Sleep -Seconds 10"'
                     // Tes apakah endpoint web (port 8082) dapat diakses
                     bat 'curl -f http://localhost:8082 || exit 1'
-                }
-            }
-        }
-
-        stage('Database Import') {
-            steps {
-                echo 'Importing database...'
-                script {
-                    // Menyalin file SQL ke dalam container MySQL
-                    bat "docker cp ${SQL_FILE} ${DB_CONTAINER}:/tubesweb.sql"
-                    
-                    // Mengimpor file SQL ke dalam database MySQL
-                    bat """
-                    docker exec ${DB_CONTAINER} mysql -u${DB_USER} -p${DB_PASSWORD} ${DB_NAME} < /tubesweb.sql || exit 1
-                    """
                 }
             }
         }
