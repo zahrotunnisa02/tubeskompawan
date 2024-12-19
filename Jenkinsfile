@@ -35,7 +35,7 @@ pipeline {
             steps {
                 echo 'Ensuring the database container is running...'
                 script {
-                    // Cek apakah container DB berjalan, jika tidak jalankan
+                    // Cek apakah container DB berjalan
                     def status = bat(script: "docker ps -q -f name=${DB_CONTAINER}", returnStdout: true).trim()
                     if (status == "") {
                         echo "Starting the database container..."
@@ -45,19 +45,29 @@ pipeline {
             }
         }
 
+        stage('Wait for DB to be Ready') {
+            steps {
+                echo 'Waiting for database to be ready...'
+                script {
+                    // Tunggu sampai MySQL siap menerima koneksi
+                    waitForMySQLToBeReady(DB_CONTAINER, DB_USER, DB_PASSWORD)
+                }
+            }
+        }
+
         stage('Database Import') {
             steps {
                 echo 'Importing database...'
                 script {
                     // Salin file SQL ke dalam container MySQL
-                    bat "docker cp ${WORKSPACE}\\tubesweb.sql ${DB_CONTAINER}:/tmp/tubesweb.sql"
+                    bat "docker cp ${WORKSPACE}\\${SQL_FILE} ${DB_CONTAINER}:/tmp/${SQL_FILE}"
                     
                     // Verifikasi file telah disalin
                     bat "docker exec ${DB_CONTAINER} ls /tmp"
 
                     // Mengimpor file SQL ke dalam database MySQL
                     bat """
-                    docker exec ${DB_CONTAINER} mysql -u${DB_USER} -p${DB_PASSWORD} ${DB_NAME} < /tmp/tubesweb.sql || exit 1
+                    docker exec ${DB_CONTAINER} mysql -u${DB_USER} -p${DB_PASSWORD} ${DB_NAME} < /tmp/${SQL_FILE} || exit 1
                     """
                 }
             }
@@ -106,5 +116,26 @@ pipeline {
         failure {
             echo 'Pipeline failed.'
         }
+    }
+}
+
+// Fungsi untuk menunggu sampai MySQL siap menerima koneksi
+def waitForMySQLToBeReady(container, dbUser, dbPassword) {
+    def retries = 10
+    def success = false
+    for (int i = 0; i < retries; i++) {
+        echo "Checking if MySQL is ready (${i + 1}/${retries})..."
+        try {
+            bat(script: "docker exec ${container} mysqladmin -u${dbUser} -p${dbPassword} ping --silent", returnStatus: true)
+            success = true
+            break
+        } catch (Exception e) {
+            echo "MySQL is not ready yet. Retrying in 10 seconds..."
+            sleep(10)
+        }
+    }
+    
+    if (!success) {
+        error "MySQL did not become ready after ${retries} attempts."
     }
 }
