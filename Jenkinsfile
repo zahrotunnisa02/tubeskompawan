@@ -23,9 +23,9 @@ pipeline {
                 echo 'Building and starting services with Docker Compose...'
                 script {
                     // Hentikan jika container sedang berjalan
-                    sh 'docker-compose down || true'
+                    bat 'docker-compose down || true'
                     // Build ulang dan jalankan container
-                    sh 'docker-compose up -d --build'
+                    bat 'docker-compose up -d --build'
                 }
             }
         }
@@ -35,9 +35,9 @@ pipeline {
                 echo 'Testing if the application is running...'
                 script {
                     // Tunggu container siap
-                    sh 'sleep 10'
+                    bat 'sleep 10'
                     // Tes apakah endpoint web (port 8082) dapat diakses
-                    sh 'curl -f http://localhost:8082 || exit 1'
+                    bat 'curl -f http://localhost:8082 || exit 1'
                 }
             }
         }
@@ -47,8 +47,8 @@ pipeline {
                 echo 'Verifying database initialization...'
                 script {
                     // Cek koneksi ke database dan tabel
-                    sh """
-                    docker exec ${DB_CONTAINER} mysql -u${DB_USER} -p${DB_PASSWORD} -e "USE ${DB_NAME}; SHOW TABLES;" || exit 1
+                    bat """
+                    docker exec ${DB_CONTAINER} mysql -u${DB_USER} -p${DB_PASSWORD} -e "USE ${DB_NAME}; batOW TABLES;" || exit 1
                     """
                 }
             }
@@ -57,7 +57,7 @@ pipeline {
         stage('Cleanup') {
             steps {
                 echo 'Cleaning up Docker Compose services...'
-                sh 'docker-compose down -v' // Hentikan container dan hapus volume
+                bat 'docker-compose down -v' // Hentikan container dan hapus volume
             }
         }
     }
@@ -67,7 +67,7 @@ pipeline {
             echo 'Pipeline completed.'
             script {
                 // Pastikan layanan dihentikan
-                sh 'docker-compose down -v || true'
+                bat 'docker-compose down -v || true'
             }
         }
         failure {
