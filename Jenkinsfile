@@ -3,8 +3,8 @@ pipeline {
 
     environment {
         IMAGE_NAME = "tubes-komputasiawan"       // Nama image Docker
-        CONTAINER_NAME = "tubeskomputasiawan" // Nama container
-        PORT = "8082:80"                        // Port mapping (host:container)
+        CONTAINER_NAME = "tubeskomputasiawan"    // Nama container
+        PORT = "8082:80"                         // Port mapping (host:container)
     }
 
     stages {
@@ -35,14 +35,15 @@ pipeline {
             }
         }
 
-       stage('Start Services with Docker Compose') {
+        stage('Start Services with Docker Compose') {
             steps {
                 script {
                     echo "Menjalankan layanan dengan Docker Compose..."
-                    // Menjalankan container menggunakan docker-compose
+                    // Pastikan file docker-compose.yml ada di lokasi yang benar
                     bat "docker-compose -f docker-compose.yml up -d"
                 }
             }
+        }
     }
 
     post {
