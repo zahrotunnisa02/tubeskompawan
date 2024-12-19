@@ -39,7 +39,7 @@ pipeline {
                     bat "docker cp ${WORKSPACE}\\tubesweb.sql ${DB_CONTAINER}:/tmp/tubesweb.sql"
                     
                     // Verifikasi file telah disalin
-                    bat 'docker exec ${DB_CONTAINER} ls /tmp'
+                    bat "docker exec ${DB_CONTAINER} ls /tmp"
 
                     // Mengimpor file SQL ke dalam database MySQL
                     bat """
