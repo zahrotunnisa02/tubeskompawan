@@ -35,7 +35,8 @@ pipeline {
                 echo 'Testing if the application is running...'
                 script {
                     // Tunggu container siap
-                    bat 'timeout /t 10 /nobreak'
+                    bat 'powershell -Command "Start-Sleep -Seconds 10"'
+
                     // Tes apakah endpoint web (port 8082) dapat diakses
                     bat 'curl -f http://localhost:8082 || exit 1'
                 }
