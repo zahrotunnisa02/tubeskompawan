@@ -14,26 +14,48 @@ pipeline {
             }
         }
 
-        stage('Build Image Docker Tubes Komputasiawan') {
+        stage('Build Docker Image') {
             steps {
-                echo 'Building Docker image...'
                 script {
-                    // Build Docker image dari Dockerfile
-                    bat "docker build -t ${IMAGE_NAME} ."
+                    // Build Docker image menggunakan Dockerfile
+                    docker.build('tubes-komputasiawan:latest', '.')
                 }
             }
         }
 
-        stage('Jalankan Container Docker') {
+        stage('Run Container') {
             steps {
-                echo 'Running Docker container...'
                 script {
-                    // Jalankan container dari image yang sudah dibuild
-                    bat "docker run -d --name ${CONTAINER_NAME} -p ${PORT} ${IMAGE_NAME}"
+                    // Jalankan container menggunakan image yang baru dibangun
+                    docker.image('tubes-komputasiawan:latest').inside {
+                        sh 'node --version' // Contoh perintah di dalam container
+                        sh 'php artisan --version' // Contoh perintah Laravel (jika ada)
+                    }
                 }
             }
         }
-    }
+
+        stage('Test Application') {
+            steps {
+                script {
+                    // Jalankan pengujian unit atau integrasi
+                    sh 'npm test' // Contoh: menjalankan tes aplikasi berbasis Node.js
+                }
+            }
+        }
+
+        stage('Push to Docker Registry') {
+            steps {
+                script {
+                    // Login ke Docker Registry
+                    sh 'docker login -u $DOCKER_USERNAME -p $DOCKER_PASSWORD'
+
+                    // Push image ke Docker Hub atau registry lain
+                    sh 'docker tag tubes-komputasiawan:latest user/tubes-komputasiawan:latest'
+                    sh 'docker push user/tubes-komputasiawan:latest'
+                }
+            }
+        }
 
     post {
         always {
