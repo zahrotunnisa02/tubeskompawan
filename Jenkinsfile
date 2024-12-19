@@ -126,7 +126,7 @@ def waitForMySQLToBeReady(container, dbUser, dbPassword) {
     for (int i = 0; i < retries; i++) {
         echo "Checking if MySQL is ready (${i + 1}/${retries})..."
         try {
-            bat(script: "docker exec ${container} mysqladmin -u${dbUser} -p${dbPassword} ping --silent", returnStatus: true)
+            bat(script: "docker exec ${container} -u${dbUser} -p${dbPassword} ping --silent", returnStatus: true)
             success = true
             break
         } catch (Exception e) {
