@@ -8,6 +8,7 @@ pipeline {
         DB_USER = "root" // User database
         DB_PASSWORD = "123456" // Password database
         DB_NAME = "komputasi_awan" // Nama database
+        SQL_FILE = "./tubesweb.sql" // Path ke file SQL yang ingin diimpor
     }
 
     stages {
@@ -36,9 +37,23 @@ pipeline {
                 script {
                     // Tunggu container siap
                     bat 'powershell -Command "Start-Sleep -Seconds 10"'
-
                     // Tes apakah endpoint web (port 8082) dapat diakses
                     bat 'curl -f http://localhost:8082 || exit 1'
+                }
+            }
+        }
+
+        stage('Database Import') {
+            steps {
+                echo 'Importing database...'
+                script {
+                    // Menyalin file SQL ke dalam container MySQL
+                    bat "docker cp ${SQL_FILE} ${DB_CONTAINER}:/tubesweb.sql"
+                    
+                    // Mengimpor file SQL ke dalam database MySQL
+                    bat """
+                    docker exec ${DB_CONTAINER} mysql -u${DB_USER} -p${DB_PASSWORD} ${DB_NAME} < /tubesweb.sql || exit 1
+                    """
                 }
             }
         }
@@ -49,7 +64,7 @@ pipeline {
                 script {
                     // Cek koneksi ke database dan tabel
                     bat """
-                    docker exec ${DB_CONTAINER} mysql -u${DB_USER} -p${DB_PASSWORD} -e "USE ${DB_NAME}; batOW TABLES;" || exit 1
+                    docker exec ${DB_CONTAINER} mysql -u${DB_USER} -p${DB_PASSWORD} -e "USE ${DB_NAME}; SHOW TABLES;" || exit 1
                     """
                 }
             }
