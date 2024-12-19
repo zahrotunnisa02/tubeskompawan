@@ -21,13 +21,16 @@ pipeline {
 
         stage('Build and Start Services') {
             steps {
-                echo 'Building and starting services with Docker Compose...'
-                script {
-                    // Hentikan jika container sedang berjalan
-                    bat 'docker-compose down || true'
-                    // Build ulang dan jalankan container
-                    bat 'docker-compose up -d --build'
-                }
+        echo 'Importing database...'
+        script {
+            // Salin file SQL ke dalam container MySQL
+            bat "docker cp ${SQL_FILE} ${DB_CONTAINER}:/tubesweb.sql"
+            
+            // Mengimpor file SQL ke dalam database MySQL
+            bat """
+            docker exec ${DB_CONTAINER} mysql -u${DB_USER} -p${DB_PASSWORD} ${DB_NAME} < /tubesweb.sql || exit 1
+            """
+        }
             }
         }
 
