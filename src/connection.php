@@ -1,6 +1,6 @@
 <?php
 
-$databaseHost = 'localhost:8081'; // Ganti dengan nama service Docker Compose atau IP database
+$databaseHost = 'localhost'; // Ganti dengan nama service Docker Compose atau IP database
 $databaseName = 'komputasi_awan';
 $databaseUsername = 'root';
 $databasePassword = '123456';
