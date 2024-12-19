@@ -38,11 +38,9 @@ pipeline {
         stage('Test Application') {
             steps {
                 script {
-                    // Jalankan perintah testing di dalam container
-                    echo "Melakukan pengujian aplikasi di dalam container ${CONTAINER_NAME}..."
+                    echo "Memeriksa apakah Apache berjalan di dalam container..."
                     bat """
-                    docker exec ${CONTAINER_NAME} node --version || echo "Node.js tidak ditemukan"
-                    docker exec ${CONTAINER_NAME} php artisan --version || echo "Laravel tidak ditemukan"
+                    docker exec tubes-komputasiawan-container ps aux | grep apache2 || echo "Apache tidak berjalan"
                     """
                 }
             }
