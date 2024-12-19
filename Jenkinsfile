@@ -35,7 +35,7 @@ pipeline {
                 echo 'Testing if the application is running...'
                 script {
                     // Tunggu container siap
-                    bat 'sleep 10'
+                    bat 'timeout /t 10 /nobreak'
                     // Tes apakah endpoint web (port 8082) dapat diakses
                     bat 'curl -f http://localhost:8082 || exit 1'
                 }
