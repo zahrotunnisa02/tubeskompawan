@@ -2,9 +2,12 @@ pipeline {
     agent any
 
     environment {
-        COMPOSE_FILE = "docker-compose.yml"
-        MYSQL_CONTAINER = "project_db_1" // Sesuaikan nama container db Anda sesuai prefiks Compose
-        WEB_CONTAINER = "project_web_1" // Sesuaikan nama container web Anda sesuai prefiks Compose
+        COMPOSE_FILE = "docker-compose.yml" // File docker-compose Anda
+        WEB_CONTAINER = "tubeskomputasiawan-web-1" // Nama container aplikasi PHP
+        DB_CONTAINER = "tubeskomputasiawan-db-1"  // Nama container MySQL
+        DB_USER = "root" // User database
+        DB_PASSWORD = "123456" // Password database
+        DB_NAME = "komputasi_awan" // Nama database
     }
 
     stages {
@@ -18,28 +21,24 @@ pipeline {
         stage('Build and Start Services') {
             steps {
                 echo 'Building and starting services with Docker Compose...'
-                sh 'docker-compose down || true' // Hentikan layanan jika sebelumnya sudah berjalan
-                sh 'docker-compose up -d --build' // Build ulang dan jalankan semua layanan secara background
-            }
-        }
-
-        stage('Run Tests') {
-            steps {
-                echo 'Running application tests...'
                 script {
-                    // Tes menggunakan curl untuk memeriksa respons endpoint
-                    sh 'sleep 10' // Beri waktu untuk memastikan semua container siap
-                    sh 'curl -f http://localhost:8082 || exit 1' // Uji aplikasi berjalan di port 8082
+                    // Hentikan jika container sedang berjalan
+                    sh 'docker-compose down || true'
+                    // Build ulang dan jalankan container
+                    sh 'docker-compose up -d --build'
                 }
             }
         }
 
-        stage('Linting and Code Quality Check') {
+        stage('Run Application Tests') {
             steps {
-                echo 'Performing linting and code quality checks...'
-                // Tambahkan alat linting atau tools code quality yang relevan di sini
-                // Contoh: menjalankan PHP lint
-                sh 'docker exec ${WEB_CONTAINER} php -l /var/www/html/index.php'
+                echo 'Testing if the application is running...'
+                script {
+                    // Tunggu container siap
+                    sh 'sleep 10'
+                    // Tes apakah endpoint web (port 8082) dapat diakses
+                    sh 'curl -f http://localhost:8082 || exit 1'
+                }
             }
         }
 
@@ -47,8 +46,9 @@ pipeline {
             steps {
                 echo 'Verifying database initialization...'
                 script {
+                    // Cek koneksi ke database dan tabel
                     sh """
-                    docker exec ${MYSQL_CONTAINER} mysql -uroot -p123456 -e "USE komputasi_awan; SHOW TABLES;" || exit 1
+                    docker exec ${DB_CONTAINER} mysql -u${DB_USER} -p${DB_PASSWORD} -e "USE ${DB_NAME}; SHOW TABLES;" || exit 1
                     """
                 }
             }
@@ -57,18 +57,21 @@ pipeline {
         stage('Cleanup') {
             steps {
                 echo 'Cleaning up Docker Compose services...'
-                sh 'docker-compose down -v' // Hentikan layanan dan hapus volume untuk membersihkan data
+                sh 'docker-compose down -v' // Hentikan container dan hapus volume
             }
         }
     }
 
     post {
         always {
-            echo 'Pipeline finished, ensuring cleanup...'
+            echo 'Pipeline completed.'
             script {
-                // Pastikan semua layanan dihentikan jika ada error
+                // Pastikan layanan dihentikan
                 sh 'docker-compose down -v || true'
             }
+        }
+        failure {
+            echo 'Pipeline failed.'
         }
     }
 }
