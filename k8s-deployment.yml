@@ -1,30 +1,30 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: ${KUBE_DEPLOYMENT_NAME}
+  name: tubes-komputasiawan-deployment
 spec:
   replicas: 2
   selector:
     matchLabels:
-      app: ${KUBE_DEPLOYMENT_NAME}
+      app: tubes-komputasiawan-deployment
   template:
     metadata:
       labels:
-        app: ${KUBE_DEPLOYMENT_NAME}
+        app: tubes-komputasiawan-deployment
     spec:
       containers:
-      - name: ${IMAGE_NAME}
-        image: ${DOCKER_USER}/${IMAGE_NAME}:latest
+      - name: tubes-komputasiawan
+        image: ${DOCKER_USER}/tubes-komputasiawan:latest  # Replace this with the actual image or use Jenkins env vars
         ports:
         - containerPort: 80
 ---
 apiVersion: v1
 kind: Service
 metadata:
-  name: ${KUBE_SERVICE_NAME}
+  name: tubes-komputasiawan-service
 spec:
   selector:
-    app: ${KUBE_DEPLOYMENT_NAME}
+    app: tubes-komputasiawan-deployment
   ports:
   - protocol: TCP
     port: 8082
