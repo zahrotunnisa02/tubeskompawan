@@ -55,8 +55,9 @@ pipeline {
             steps {
                 script {
                     echo "Melakukan deployment ke Kubernetes..."
-                   
-                        bat "kubectl apply -f k8s-deployment.yml"
+                   // Menentukan lokasi kubeconfig lokal
+                    def kubeconfigPath = "C:\Users\admin\.kube\config"
+                    bat "set KUBECONFIG=${kubeconfigPath} && kubectl apply -f k8s-deployment.yml"
             
                 }
             }
