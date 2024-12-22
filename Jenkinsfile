@@ -7,7 +7,7 @@ pipeline {
         PORT = "8082:80"
         KUBE_DEPLOYMENT_NAME = "tubes-komputasiawan-deployment"
         KUBE_SERVICE_NAME = "tubes-komputasiawan-service"
-        KUBECONFIG_PATH = "C:\\Users\\admin\\.kube\\config" // Ganti dengan lokasi file kubeconfig Anda
+        KUBECONFIG_PATH = "C:\Users\admin\.kube\config" // Ganti dengan lokasi file kubeconfig Anda
     }
 
     stages {
