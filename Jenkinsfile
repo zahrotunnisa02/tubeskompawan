@@ -10,11 +10,23 @@ pipeline {
     }
 
     stages {
+        stage('Login to Docker Registry') {
+            steps {
+                script {
+                    echo "Login ke Docker Hub..."
+
+                    // Memuat kredensial dari Jenkins Credentials Store
+                    withCredentials([usernamePassword(credentialsId: 'docker-hub-credentials', usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
+                        bat "docker login -u ${DOCKER_USER} -p ${DOCKER_PASS}"
+                    }
+                }
+            }
+        }
+
         stage('Build Docker Image') {
             steps {
                 script {
                     echo "Membangun Docker image..."
-                    // Build Docker image
                     bat "docker build -t ${IMAGE_NAME}:latest ."
                 }
             }
@@ -23,11 +35,11 @@ pipeline {
         stage('Push Docker Image to Registry') {
             steps {
                 script {
-                    echo "Mendorong Docker image ke registry lokal atau Docker Hub..."
-                    // Pastikan Anda login ke Docker Hub atau registry lokal
-                    // Contoh untuk push ke Docker Hub
-                    bat "docker tag ${IMAGE_NAME}:latest sayadimas/${IMAGE_NAME}:latest"
-                    bat "docker push sayadimas/${IMAGE_NAME}:latest"
+                    echo "Mendorong Docker image ke registry..."
+                    withCredentials([usernamePassword(credentialsId: 'docker-hub-credentials', usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
+                        bat "docker tag ${IMAGE_NAME}:latest ${DOCKER_USER}/${IMAGE_NAME}:latest"
+                        bat "docker push ${DOCKER_USER}/${IMAGE_NAME}:latest"
+                    }
                 }
             }
         }
@@ -36,8 +48,6 @@ pipeline {
             steps {
                 script {
                     echo "Melakukan deployment ke Kubernetes..."
-
-                    // Buat deployment YAML file jika diperlukan (opsional)
                     writeFile file: 'k8s-deployment.yml', text: """
                     apiVersion: apps/v1
                     kind: Deployment
@@ -55,7 +65,7 @@ pipeline {
                         spec:
                           containers:
                           - name: ${IMAGE_NAME}
-                            image: sayadimas/${IMAGE_NAME}:latest
+                            image: ${DOCKER_USER}/${IMAGE_NAME}:latest
                             ports:
                             - containerPort: 80
                     ---
@@ -72,8 +82,6 @@ pipeline {
                         targetPort: 80
                       type: NodePort
                     """
-
-                    // Terapkan deployment ke Kubernetes
                     bat "kubectl apply -f k8s-deployment.yml"
                 }
             }
@@ -83,11 +91,8 @@ pipeline {
             steps {
                 script {
                     echo "Memastikan aplikasi berjalan di Kubernetes..."
-
-                    // Dapatkan NodePort dari layanan
                     def NODE_PORT = bat(script: "kubectl get svc ${KUBE_SERVICE_NAME} -o=jsonpath='{.spec.ports[0].nodePort}'", returnStdout: true).trim()
-
-                    // Akses aplikasi
+                    echo "Aplikasi tersedia di port: ${NODE_PORT}"
                     bat "curl -s http://127.0.0.1:${NODE_PORT} || echo 'Aplikasi tidak dapat diakses'"
                 }
             }
@@ -97,8 +102,6 @@ pipeline {
             steps {
                 script {
                     echo "Membersihkan resource Kubernetes..."
-
-                    // Menghapus deployment dan service setelah pengujian
                     bat "kubectl delete deployment ${KUBE_DEPLOYMENT_NAME}"
                     bat "kubectl delete service ${KUBE_SERVICE_NAME}"
                 }
