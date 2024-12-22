@@ -10,6 +10,7 @@ services:
       - ./images:/var/www/html/images
     depends_on:
       - db
+
   db:
     image: mysql:5.7
     environment:
@@ -20,7 +21,7 @@ services:
     volumes:
       - db_data:/var/lib/mysql
       - ./tubesweb.sql:/docker-entrypoint-initdb.d/init.sql:ro
-  
+
   phpmyadmin:
     image: phpmyadmin/phpmyadmin
     ports:
