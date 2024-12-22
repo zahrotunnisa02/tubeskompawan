@@ -62,17 +62,17 @@ pipeline {
                 script {
                     echo "Memastikan aplikasi berjalan di Kubernetes..."
         
-                    // Set KUBECONFIG dan dapatkan NodePort
+                    // Set KUBECONFIG dan dapatkan NodePort dari service
                     def NODE_PORT = bat(
                         script: """
                             @echo off
                             set KUBECONFIG=C:\\Users\\admin\\.kube\\config
-                            for /f "delims=" %%a in ('kubectl get svc tubes-komputasiawan-service -o=jsonpath="{.spec.ports[0].nodePort}"') do @echo %%a
+                            kubectl get svc tubes-komputasiawan-service -o=jsonpath="{.spec.ports[0].nodePort}"
                         """,
                         returnStdout: true
                     ).trim()
         
-                    if (NODE_PORT == "") {
+                    if (!NODE_PORT?.isInteger()) {
                         error "Gagal mendapatkan NodePort. Pastikan service berjalan."
                     }
         
@@ -94,6 +94,7 @@ pipeline {
                 }
             }
         }
+
 
 
         stage('Clean Up Kubernetes Resources') {
