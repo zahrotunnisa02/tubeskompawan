@@ -7,6 +7,7 @@ pipeline {
         PORT = "8082:80"
         KUBE_DEPLOYMENT_NAME = "tubes-komputasiawan-deployment"
         KUBE_SERVICE_NAME = "tubes-komputasiawan-service"
+        KUBECONFIG_PATH = "C:\\Users\\admin\\.kube\\config" // Ganti dengan lokasi file kubeconfig Anda
     }
 
     stages {
@@ -55,10 +56,12 @@ pipeline {
             steps {
                 script {
                     echo "Melakukan deployment ke Kubernetes..."
-                   // Menentukan lokasi kubeconfig lokal
-                    def kubeconfigPath = "C:\Users\admin\.kube\config"
-                    bat "set KUBECONFIG=${kubeconfigPath} && kubectl apply -f k8s-deployment.yml"
-            
+                    
+                    // Set environment variable untuk kubeconfig
+                    bat """
+                        set KUBECONFIG=${KUBECONFIG_PATH} &&
+                        kubectl apply -f k8s-deployment.yml
+                    """
                 }
             }
         }
@@ -67,9 +70,22 @@ pipeline {
             steps {
                 script {
                     echo "Memastikan aplikasi berjalan di Kubernetes..."
-                    def NODE_PORT = bat(script: "kubectl get svc ${KUBE_SERVICE_NAME} -o=jsonpath='{.spec.ports[0].nodePort}'", returnStdout: true).trim()
+                    
+                    // Set KUBECONFIG dan mendapatkan NodePort service
+                    def NODE_PORT = bat(
+                        script: """
+                            set KUBECONFIG=${KUBECONFIG_PATH} &&
+                            kubectl get svc ${KUBE_SERVICE_NAME} -o=jsonpath='{.spec.ports[0].nodePort}'
+                        """, 
+                        returnStdout: true
+                    ).trim()
+
                     echo "Aplikasi tersedia di port: ${NODE_PORT}"
-                    bat "curl -s http://127.0.0.1:${NODE_PORT} || echo 'Aplikasi tidak dapat diakses'"
+
+                    // Testing koneksi ke aplikasi
+                    bat """
+                        curl -s http://127.0.0.1:${NODE_PORT} || echo 'Aplikasi tidak dapat diakses'
+                    """
                 }
             }
         }
@@ -78,8 +94,13 @@ pipeline {
             steps {
                 script {
                     echo "Membersihkan resource Kubernetes..."
-                    bat "kubectl delete deployment ${KUBE_DEPLOYMENT_NAME}"
-                    bat "kubectl delete service ${KUBE_SERVICE_NAME}"
+                    
+                    // Set KUBECONFIG dan membersihkan resource
+                    bat """
+                        set KUBECONFIG=${KUBECONFIG_PATH} &&
+                        kubectl delete deployment ${KUBE_DEPLOYMENT_NAME} &&
+                        kubectl delete service ${KUBE_SERVICE_NAME}
+                    """
                 }
             }
         }
