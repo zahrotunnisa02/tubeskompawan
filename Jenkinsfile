@@ -26,7 +26,7 @@ pipeline {
                     echo "Mendorong Docker image ke registry lokal atau Docker Hub..."
                     // Pastikan Anda login ke Docker Hub atau registry lokal
                     // Contoh untuk push ke Docker Hub
-                    bat "docker tag ${IMAGE_NAME}:latest <your_dockerhub_username>/${IMAGE_NAME}:latest"
+                    bat "docker tag ${IMAGE_NAME}:latest sayadimas/${IMAGE_NAME}:latest"
                     bat "docker push <your_dockerhub_username>/${IMAGE_NAME}:latest"
                 }
             }
