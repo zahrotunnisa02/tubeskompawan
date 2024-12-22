@@ -61,19 +61,23 @@ pipeline {
             steps {
                 script {
                     echo "Memastikan aplikasi berjalan di Kubernetes..."
-
-                    @echo off
-                    set KUBECONFIG=C:\Users\admin\.kube\config
-                    echo Mendapatkan NodePort dari service...
-                    for /f "delims=" %%a in ('kubectl get svc tubes-komputasiawan-service -o=jsonpath="{.spec.ports[0].nodePort}"') do set NODE_PORT=%%a
-                    
-                    echo NodePort ditemukan: %NODE_PORT%
-                    if "%NODE_PORT%"=="" (
-                        echo Gagal mendapatkan NodePort. Pastikan service berjalan.
-                        exit /b 1
-                    )
-
-                    // Uji koneksi ke aplikasi dengan curl
+        
+                    // Dapatkan NodePort dari service Kubernetes
+                    def NODE_PORT = bat(
+                        script: """
+                            set KUBECONFIG=C:\\Users\\admin\\.kube\\config
+                            kubectl get svc tubes-komputasiawan-service -o=jsonpath="{.spec.ports[0].nodePort}"
+                        """,
+                        returnStdout: true
+                    ).trim()
+        
+                    if (NODE_PORT == "") {
+                        error "Gagal mendapatkan NodePort. Pastikan service berjalan."
+                    }
+        
+                    echo "NodePort ditemukan: ${NODE_PORT}"
+        
+                    // Uji koneksi ke aplikasi
                     bat """
                         curl -s http://127.0.0.1:${NODE_PORT} || echo Aplikasi tidak dapat diakses
                     """
