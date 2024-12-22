@@ -16,9 +16,7 @@ pipeline {
                 script {
                     echo "Login ke Docker Hub..."
                     withCredentials([usernamePassword(credentialsId: 'docker-hub-credentials', usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
-                        bat """
-                            docker login -u ${DOCKER_USER} -p ${DOCKER_PASS}
-                        """
+                        bat "docker login -u ${DOCKER_USER} -p ${DOCKER_PASS}"
                     }
                 }
             }
@@ -28,9 +26,7 @@ pipeline {
             steps {
                 script {
                     echo "Membangun Docker image..."
-                    bat """
-                        docker build -t ${IMAGE_NAME}:latest .
-                    """
+                    bat "docker build -t ${IMAGE_NAME}:latest ."
                 }
             }
         }
@@ -69,7 +65,7 @@ pipeline {
                     // Mendapatkan NodePort dari service Kubernetes
                     def NODE_PORT = bat(
                         script: """
-                            set KUBECONFIG=${KUBECONFIG_PATH}
+                            set KUBECONFIG=${KUBECONFIG_PATH} &&
                             kubectl get svc ${KUBE_SERVICE_NAME} -o=jsonpath="{.spec.ports[0].nodePort}"
                         """,
                         returnStdout: true
