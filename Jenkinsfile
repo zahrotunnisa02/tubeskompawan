@@ -27,7 +27,9 @@ pipeline {
             steps {
                 script {
                     echo "Membangun Docker image..."
-                    bat "docker build -t ${IMAGE_NAME}:latest ."
+                    // Using withCredentials to inject kubeconfig or other authentication details
+                    withCredentials([file(credentialsId: 'kubeconfig-file', variable: 'KUBECONFIG')]) {
+                    bat "kubectl --kubeconfig=${KUBECONFIG} apply -f k8s-deployment.yml"
                 }
             }
         }
