@@ -66,10 +66,10 @@ pipeline {
                 script {
                     echo "Memastikan aplikasi berjalan di Kubernetes..."
 
-                    // Dapatkan NodePort dari service Kubernetes
+                    // Mendapatkan NodePort dari service Kubernetes
                     def NODE_PORT = bat(
                         script: """
-                            set KUBECONFIG=${KUBECONFIG_PATH}
+                            set KUBECONFIG=${KUBECONFIG_PATH} &&
                             kubectl get svc ${KUBE_SERVICE_NAME} -o=jsonpath="{.spec.ports[0].nodePort}"
                         """,
                         returnStdout: true
@@ -77,9 +77,9 @@ pipeline {
 
                     echo "NodePort yang didapat: ${NODE_PORT}"
 
-                    // Uji koneksi ke aplikasi
+                    // Uji koneksi ke aplikasi dengan curl
                     bat """
-                        curl -s http://127.0.0.1:${NODE_PORT} || echo 'Aplikasi tidak dapat diakses'
+                        curl -s http://127.0.0.1:${NODE_PORT} || echo Aplikasi tidak dapat diakses
                     """
                 }
             }
