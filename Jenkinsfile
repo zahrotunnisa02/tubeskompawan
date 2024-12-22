@@ -32,6 +32,15 @@ pipeline {
             }
         }
 
+        stage('Show Docker Images') {
+            steps {
+                script {
+                    echo "Menampilkan Docker images..."
+                    bat "docker images"
+                }
+            }
+        }
+
         stage('Push Docker Image to Registry') {
             steps {
                 script {
