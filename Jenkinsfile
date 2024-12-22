@@ -65,7 +65,7 @@ pipeline {
                     // Mendapatkan NodePort dari service Kubernetes
                     def NODE_PORT = bat(
                         script: """
-                            set KUBECONFIG=${KUBECONFIG_PATH} &&
+                            set KUBECONFIG=${KUBECONFIG_PATH} 
                             kubectl get svc ${KUBE_SERVICE_NAME} -o=jsonpath="{.spec.ports[0].nodePort}"
                         """,
                         returnStdout: true
