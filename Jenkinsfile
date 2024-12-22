@@ -48,41 +48,7 @@ pipeline {
             steps {
                 script {
                     echo "Melakukan deployment ke Kubernetes..."
-                    writeFile file: 'k8s-deployment.yml', text: """
-                    apiVersion: apps/v1
-                    kind: Deployment
-                    metadata:
-                      name: ${KUBE_DEPLOYMENT_NAME}
-                    spec:
-                      replicas: 2
-                      selector:
-                        matchLabels:
-                          app: ${KUBE_DEPLOYMENT_NAME}
-                      template:
-                        metadata:
-                          labels:
-                            app: ${KUBE_DEPLOYMENT_NAME}
-                        spec:
-                          containers:
-                          - name: ${IMAGE_NAME}
-                            image: ${DOCKER_USER}/${IMAGE_NAME}:latest
-                            ports:
-                            - containerPort: 80
-                    ---
-                    apiVersion: v1
-                    kind: Service
-                    metadata:
-                      name: ${KUBE_SERVICE_NAME}
-                    spec:
-                      selector:
-                        app: ${KUBE_DEPLOYMENT_NAME}
-                      ports:
-                      - protocol: TCP
-                        port: 8082
-                        targetPort: 80
-                      type: NodePort
-                    """
-                    bat "kubectl apply -f k8s-deployment.yml"
+                    bat "kubectl apply -f kubernetes/k8s-deployment.yml"
                 }
             }
         }
