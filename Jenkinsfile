@@ -17,7 +17,7 @@ pipeline {
 
                     // Memuat kredensial dari Jenkins Credentials Store
                     withCredentials([usernamePassword(credentialsId: 'docker-hub-credentials', usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
-                        sh "docker login -u ${DOCKER_USER} -p ${DOCKER_PASS}"
+                        bat "docker login -u ${DOCKER_USER} -p ${DOCKER_PASS}"
                     }
                 }
             }
@@ -27,7 +27,7 @@ pipeline {
             steps {
                 script {
                     echo "Membangun Docker image..."
-                    sh "docker build -t ${IMAGE_NAME}:latest ."
+                    bat "docker build -t ${IMAGE_NAME}:latest ."
                 }
             }
         }
@@ -37,8 +37,8 @@ pipeline {
                 script {
                     echo "Mendorong Docker image ke registry..."
                     withCredentials([usernamePassword(credentialsId: 'docker-hub-credentials', usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
-                        sh "docker tag ${IMAGE_NAME}:latest ${DOCKER_USER}/${IMAGE_NAME}:latest"
-                        sh "docker push ${DOCKER_USER}/${IMAGE_NAME}:latest"
+                        bat "docker tag ${IMAGE_NAME}:latest ${DOCKER_USER}/${IMAGE_NAME}:latest"
+                        bat "docker push ${DOCKER_USER}/${IMAGE_NAME}:latest"
                     }
                 }
             }
@@ -82,7 +82,7 @@ pipeline {
                         targetPort: 80
                       type: NodePort
                     """
-                    sh "kubectl apply -f k8s-deployment.yml"
+                    bat "kubectl apply -f k8s-deployment.yml"
                 }
             }
         }
@@ -91,9 +91,9 @@ pipeline {
             steps {
                 script {
                     echo "Memastikan aplikasi berjalan di Kubernetes..."
-                    def NODE_PORT = sh(script: "kubectl get svc ${KUBE_SERVICE_NAME} -o=jsonpath='{.spec.ports[0].nodePort}'", returnStdout: true).trim()
+                    def NODE_PORT = bat(script: "kubectl get svc ${KUBE_SERVICE_NAME} -o=jsonpath='{.spec.ports[0].nodePort}'", returnStdout: true).trim()
                     echo "Aplikasi tersedia di port: ${NODE_PORT}"
-                    sh "curl -s http://127.0.0.1:${NODE_PORT} || echo 'Aplikasi tidak dapat diakses'"
+                    bat "curl -s http://127.0.0.1:${NODE_PORT} || echo 'Aplikasi tidak dapat diakses'"
                 }
             }
         }
@@ -102,8 +102,8 @@ pipeline {
             steps {
                 script {
                     echo "Membersihkan resource Kubernetes..."
-                    sh "kubectl delete deployment ${KUBE_DEPLOYMENT_NAME}"
-                    sh "kubectl delete service ${KUBE_SERVICE_NAME}"
+                    bat "kubectl delete deployment ${KUBE_DEPLOYMENT_NAME}"
+                    bat "kubectl delete service ${KUBE_SERVICE_NAME}"
                 }
             }
         }
