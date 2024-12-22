@@ -11,12 +11,17 @@ pipeline {
     }
 
     stages {
-        stage('Login to Docker Registry') {
+        stage('Login to Docker Registry dan start minikube') {
             steps {
                 script {
                     echo "Login ke Docker Hub..."
                     withCredentials([usernamePassword(credentialsId: 'docker-hub-credentials', usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
                         bat "docker login -u ${DOCKER_USER} -p ${DOCKER_PASS}"
+
+                    echo "Memulai Minikube..."
+                    bat """
+                        minikube start
+                    """
                     }
                 }
             }
