@@ -16,7 +16,7 @@ spec:
       - name: tubes-komputasiawan
         image: ${DOCKER_USER}/tubes-komputasiawan:latest  # Replace this with the actual image or use Jenkins env vars
         ports:
-        - containerPort: 80
+        - containerPort: 8082:80
 ---
 apiVersion: v1
 kind: Service
