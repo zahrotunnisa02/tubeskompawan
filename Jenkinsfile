@@ -14,8 +14,6 @@ pipeline {
             steps {
                 script {
                     echo "Login ke Docker Hub..."
-
-                    // Memuat kredensial dari Jenkins Credentials Store
                     withCredentials([usernamePassword(credentialsId: 'docker-hub-credentials', usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
                         bat "docker login -u ${DOCKER_USER} -p ${DOCKER_PASS}"
                     }
@@ -58,11 +56,7 @@ pipeline {
                 script {
                     echo "Melakukan deployment ke Kubernetes..."
                     withCredentials([file(credentialsId: 'kubeconfig-file', variable: 'KUBECONFIG')]) {
-                        environment {
-                            KUBECONFIG = KUBECONFIG_FILE
-                        }
-                        bat "kubectl apply -f k8s-deployment.yml"
-                     //   bat "kubectl --kubeconfig=${KUBECONFIG} apply -f k8s-deployment.yml"
+                        bat "kubectl --kubeconfig=${KUBECONFIG} apply -f k8s-deployment.yml"
                     }
                 }
             }
