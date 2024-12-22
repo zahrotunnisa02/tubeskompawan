@@ -62,38 +62,36 @@ pipeline {
                 script {
                     echo "Memastikan aplikasi berjalan di Kubernetes..."
         
-                    // Set KUBECONFIG dan dapatkan NodePort dari service
-                    def NODE_PORT = bat(
-                        script: """
-                            @echo off
-                            set KUBECONFIG=C:\\Users\\admin\\.kube\\config
-                            kubectl get svc tubes-komputasiawan-service -o=jsonpath="{.spec.ports[0].nodePort}"
-                        """,
-                        returnStdout: true
-                    ).trim()
+                    // Set KUBECONFIG
+                    bat 'set KUBECONFIG=C:\\Users\\admin\\.kube\\config'
         
-                    if (!NODE_PORT?.isInteger()) {
+                    // Mendapatkan NodePort dari Service
+                    echo "Mendapatkan NodePort dari service..."
+                    def nodePort = bat(script: 'kubectl get svc tubes-komputasiawan-service -o=jsonpath="{.spec.ports[0].nodePort}"', returnStdout: true).trim()
+                    echo "NodePort ditemukan: ${nodePort}"
+                    
+                    if (!nodePort) {
                         error "Gagal mendapatkan NodePort. Pastikan service berjalan."
                     }
         
-                    echo "NodePort ditemukan: ${NODE_PORT}"
-        
-                    // Uji koneksi ke aplikasi menggunakan curl
-                    def result = bat(
-                        script: """
-                            curl -s http://127.0.0.1:${NODE_PORT} || echo Aplikasi tidak dapat diakses
-                        """,
-                        returnStdout: true
-                    ).trim()
-        
-                    if (result.contains("Aplikasi tidak dapat diakses")) {
-                        error "Aplikasi tidak dapat diakses pada http://127.0.0.1:${NODE_PORT}"
+                    // Mendapatkan IP Minikube
+                    echo "Mendapatkan IP Minikube..."
+                    def minikubeIp = bat(script: 'minikube ip', returnStdout: true).trim()
+                    echo "Minikube IP: ${minikubeIp}"
+                    
+                    // Uji koneksi ke aplikasi dengan curl
+                    echo "Mengakses aplikasi di http://${minikubeIp}:${nodePort}"
+                    def response = bat(script: "curl -s http://${minikubeIp}:${nodePort}", returnStatus: true)
+                    
+                    if (response != 0) {
+                        error "Aplikasi tidak dapat diakses di http://${minikubeIp}:${nodePort}"
+                    } else {
+                        echo "Aplikasi berhasil diakses di http://${minikubeIp}:${nodePort}"
                     }
-        
-                    echo "Aplikasi berjalan pada http://127.0.0.1:${NODE_PORT}"
                 }
             }
         }
+
 
 
 
