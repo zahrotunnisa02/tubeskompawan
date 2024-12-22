@@ -55,9 +55,9 @@ pipeline {
             steps {
                 script {
                     echo "Melakukan deployment ke Kubernetes..."
-                    withCredentials([file(credentialsId: 'kubeconfig-file', variable: 'KUBECONFIG')]) {
-                        bat "kubectl --kubeconfig=${KUBECONFIG} apply -f k8s-deployment.yml"
-                    }
+                   
+                        bat "kubectl apply -f k8s-deployment.yml"
+            
                 }
             }
         }
