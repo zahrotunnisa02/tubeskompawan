@@ -5,6 +5,8 @@ pipeline {
         IMAGE_NAME = "tubes-komputasiawan"
         CONTAINER_NAME = "tubes-komputasiawan-container"
         PORT = "8082:80"
+        KUBE_DEPLOYMENT_NAME = "tubes-komputasiawan-deployment"
+        KUBE_SERVICE_NAME = "tubes-komputasiawan-service"
     }
 
     stages {
@@ -12,38 +14,93 @@ pipeline {
             steps {
                 script {
                     echo "Membangun Docker image..."
-                    // Menggunakan docker-compose untuk build jika diperlukan
-                    bat "docker-compose -f docker-compose.yml build"
+                    // Build Docker image
+                    bat "docker build -t ${IMAGE_NAME}:latest ."
                 }
             }
         }
 
-        stage('Start Services with Docker Compose') {
+        stage('Push Docker Image to Registry') {
             steps {
                 script {
-                    echo "Menjalankan layanan dengan Docker Compose..."
-                    // Menjalankan container menggunakan docker-compose
-                    bat "docker-compose -f docker-compose.yml up -d"
+                    echo "Mendorong Docker image ke registry lokal atau Docker Hub..."
+                    // Pastikan Anda login ke Docker Hub atau registry lokal
+                    // Contoh untuk push ke Docker Hub
+                    bat "docker tag ${IMAGE_NAME}:latest <your_dockerhub_username>/${IMAGE_NAME}:latest"
+                    bat "docker push <your_dockerhub_username>/${IMAGE_NAME}:latest"
                 }
             }
         }
 
-        stage('Test Application') {
+        stage('Deploy Application to Kubernetes') {
             steps {
                 script {
-                    echo "Memastikan aplikasi PHP berjalan..."
-                    // Cek apakah web service dapat diakses
-                    bat "curl -s http://localhost:8082 || echo 'Aplikasi tidak dapat diakses'"
+                    echo "Melakukan deployment ke Kubernetes..."
+
+                    // Buat deployment YAML file jika diperlukan (opsional)
+                    writeFile file: 'k8s-deployment.yml', text: """
+                    apiVersion: apps/v1
+                    kind: Deployment
+                    metadata:
+                      name: ${KUBE_DEPLOYMENT_NAME}
+                    spec:
+                      replicas: 2
+                      selector:
+                        matchLabels:
+                          app: ${KUBE_DEPLOYMENT_NAME}
+                      template:
+                        metadata:
+                          labels:
+                            app: ${KUBE_DEPLOYMENT_NAME}
+                        spec:
+                          containers:
+                          - name: ${IMAGE_NAME}
+                            image: <your_dockerhub_username>/${IMAGE_NAME}:latest
+                            ports:
+                            - containerPort: 80
+                    ---
+                    apiVersion: v1
+                    kind: Service
+                    metadata:
+                      name: ${KUBE_SERVICE_NAME}
+                    spec:
+                      selector:
+                        app: ${KUBE_DEPLOYMENT_NAME}
+                      ports:
+                      - protocol: TCP
+                        port: 8082
+                        targetPort: 80
+                      type: NodePort
+                    """
+
+                    // Terapkan deployment ke Kubernetes
+                    bat "kubectl apply -f k8s-deployment.yml"
                 }
             }
         }
 
-        stage('Stop Services') {
+        stage('Test Kubernetes Application') {
             steps {
                 script {
-                    echo "Menghentikan layanan dengan Docker Compose..."
-                    // Menghentikan dan menghapus container setelah pengujian
-                    bat "docker-compose -f docker-compose.yml down"
+                    echo "Memastikan aplikasi berjalan di Kubernetes..."
+
+                    // Dapatkan NodePort dari layanan
+                    def NODE_PORT = bat(script: "kubectl get svc ${KUBE_SERVICE_NAME} -o=jsonpath='{.spec.ports[0].nodePort}'", returnStdout: true).trim()
+
+                    // Akses aplikasi
+                    bat "curl -s http://127.0.0.1:${NODE_PORT} || echo 'Aplikasi tidak dapat diakses'"
+                }
+            }
+        }
+
+        stage('Clean Up Kubernetes Resources') {
+            steps {
+                script {
+                    echo "Membersihkan resource Kubernetes..."
+
+                    // Menghapus deployment dan service setelah pengujian
+                    bat "kubectl delete deployment ${KUBE_DEPLOYMENT_NAME}"
+                    bat "kubectl delete service ${KUBE_SERVICE_NAME}"
                 }
             }
         }
