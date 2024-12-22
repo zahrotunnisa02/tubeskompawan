@@ -62,11 +62,12 @@ pipeline {
                 script {
                     echo "Memastikan aplikasi berjalan di Kubernetes..."
         
-                    // Dapatkan NodePort dari service Kubernetes
+                    // Set KUBECONFIG dan dapatkan NodePort
                     def NODE_PORT = bat(
                         script: """
+                            @echo off
                             set KUBECONFIG=C:\\Users\\admin\\.kube\\config
-                            kubectl get svc tubes-komputasiawan-service -o=jsonpath="{.spec.ports[0].nodePort}"
+                            for /f "delims=" %%a in ('kubectl get svc tubes-komputasiawan-service -o=jsonpath="{.spec.ports[0].nodePort}"') do @echo %%a
                         """,
                         returnStdout: true
                     ).trim()
@@ -77,13 +78,23 @@ pipeline {
         
                     echo "NodePort ditemukan: ${NODE_PORT}"
         
-                    // Uji koneksi ke aplikasi
-                    bat """
-                        curl -s http://127.0.0.1:${NODE_PORT} || echo Aplikasi tidak dapat diakses
-                    """
+                    // Uji koneksi ke aplikasi menggunakan curl
+                    def result = bat(
+                        script: """
+                            curl -s http://127.0.0.1:${NODE_PORT} || echo Aplikasi tidak dapat diakses
+                        """,
+                        returnStdout: true
+                    ).trim()
+        
+                    if (result.contains("Aplikasi tidak dapat diakses")) {
+                        error "Aplikasi tidak dapat diakses pada http://127.0.0.1:${NODE_PORT}"
+                    }
+        
+                    echo "Aplikasi berjalan pada http://127.0.0.1:${NODE_PORT}"
                 }
             }
         }
+
 
         stage('Clean Up Kubernetes Resources') {
             steps {
