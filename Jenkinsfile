@@ -16,7 +16,9 @@ pipeline {
                 script {
                     echo "Login ke Docker Hub..."
                     withCredentials([usernamePassword(credentialsId: 'docker-hub-credentials', usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
-                        bat "docker login -u ${DOCKER_USER} -p ${DOCKER_PASS}"
+                        bat """
+                            docker login -u ${DOCKER_USER} -p ${DOCKER_PASS}
+                        """
                     }
                 }
             }
@@ -26,7 +28,9 @@ pipeline {
             steps {
                 script {
                     echo "Membangun Docker image..."
-                    bat "docker build -t ${IMAGE_NAME}:latest ."
+                    bat """
+                        docker build -t ${IMAGE_NAME}:latest .
+                    """
                 }
             }
         }
@@ -36,8 +40,10 @@ pipeline {
                 script {
                     echo "Mendorong Docker image ke registry..."
                     withCredentials([usernamePassword(credentialsId: 'docker-hub-credentials', usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
-                        bat "docker tag ${IMAGE_NAME}:latest ${DOCKER_USER}/${IMAGE_NAME}:latest"
-                        bat "docker push ${DOCKER_USER}/${IMAGE_NAME}:latest"
+                        bat """
+                            docker tag ${IMAGE_NAME}:latest ${DOCKER_USER}/${IMAGE_NAME}:latest
+                            docker push ${DOCKER_USER}/${IMAGE_NAME}:latest
+                        """
                     }
                 }
             }
@@ -48,7 +54,7 @@ pipeline {
                 script {
                     echo "Melakukan deployment ke Kubernetes..."
                     bat """
-                        set KUBECONFIG=${KUBECONFIG_PATH} &&
+                        set KUBECONFIG=${KUBECONFIG_PATH}
                         kubectl apply -f k8s-deployment.yml
                     """
                 }
@@ -63,7 +69,7 @@ pipeline {
                     // Dapatkan NodePort dari service Kubernetes
                     def NODE_PORT = bat(
                         script: """
-                            set KUBECONFIG=${KUBECONFIG_PATH} &&
+                            set KUBECONFIG=${KUBECONFIG_PATH}
                             kubectl get svc ${KUBE_SERVICE_NAME} -o=jsonpath="{.spec.ports[0].nodePort}"
                         """,
                         returnStdout: true
@@ -84,8 +90,8 @@ pipeline {
                 script {
                     echo "Membersihkan resource Kubernetes..."
                     bat """
-                        set KUBECONFIG=${KUBECONFIG_PATH} &&
-                        kubectl delete deployment ${KUBE_DEPLOYMENT_NAME} &&
+                        set KUBECONFIG=${KUBECONFIG_PATH}
+                        kubectl delete deployment ${KUBE_DEPLOYMENT_NAME}
                         kubectl delete service ${KUBE_SERVICE_NAME}
                     """
                 }
