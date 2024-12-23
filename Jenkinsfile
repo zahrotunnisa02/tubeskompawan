@@ -34,6 +34,10 @@ pipeline {
                 script {
                     echo "Membangun Docker image..."
                     bat "docker build -t ${IMAGE_NAME}:latest ."
+
+                    echo "Menjalankan Docker Compose..."
+                    // Jalankan Docker Compose
+                    bat "docker-compose up -d"
                 }
             }
         }
