@@ -24,6 +24,10 @@ pipeline {
                         minikube stop || echo "Minikube belum berjalan"
                         minikube delete || echo "Minikube sudah dihapus"
                         minikube start --driver=docker
+                        minikube update-context
+
+                        minikube status
+
                     """
                 }
             }
