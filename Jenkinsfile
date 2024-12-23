@@ -38,7 +38,13 @@ pipeline {
                 script {
                     echo "Membangun Docker image..."
                     bat "docker build -t ${IMAGE_NAME}:latest ."
-
+                    echo "Memeriksa apakah Docker Compose sedang berjalan..."
+                    def isRunning = bat(script: "docker-compose ps -q", returnStdout: true).trim()
+            
+                    if (isRunning) {
+                        echo "Docker Compose sedang berjalan, menghentikan layanan..."
+                        bat "docker-compose down"
+                    }
                     echo "Menjalankan Docker Compose..."
                     // Jalankan Docker Compose
                     bat "docker-compose up -d"
