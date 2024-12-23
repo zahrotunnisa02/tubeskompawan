@@ -20,7 +20,7 @@ pipeline {
 
                     echo "Memulai Minikube..."
                     bat """
-                        minikube start
+                        minikube start --driver=docker
                     """
                     }
                 }
