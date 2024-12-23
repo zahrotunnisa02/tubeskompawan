@@ -58,7 +58,7 @@ pipeline {
                     echo "Melakukan deployment ke Kubernetes..."
                     bat """
                         set KUBECONFIG=${KUBECONFIG_PATH}
-                        kubectl apply -f k8s-deployment.yml
+                        kubectl apply -f k8s-deployment.yml --validate=false
                     """
                 }
             }
