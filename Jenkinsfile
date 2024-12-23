@@ -20,6 +20,8 @@ pipeline {
 
                     echo "Memulai Minikube..."
                     bat """
+                        minikube stop
+                        minikube delete
                         minikube start --driver=docker
                     """
                     }
