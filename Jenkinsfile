@@ -11,20 +11,20 @@ pipeline {
     }
 
     stages {
-        stage('Login to Docker Registry dan start minikube') {
+        stage('Login to Docker Registry dan Start Minikube') {
             steps {
                 script {
                     echo "Login ke Docker Hub..."
                     withCredentials([usernamePassword(credentialsId: 'docker-hub-credentials', usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
                         bat "docker login -u ${DOCKER_USER} -p ${DOCKER_PASS}"
-
+                    }
+                    
                     echo "Memulai Minikube..."
                     bat """
-                        minikube stop
-                        minikube delete
+                        minikube stop || echo "Minikube belum berjalan"
+                        minikube delete || echo "Minikube sudah dihapus"
                         minikube start --driver=docker
                     """
-                    }
                 }
             }
         }
@@ -58,6 +58,8 @@ pipeline {
                     echo "Melakukan deployment ke Kubernetes..."
                     bat """
                         set KUBECONFIG=${KUBECONFIG_PATH}
+                        kubectl config use-context minikube
+                        kubectl cluster-info
                         kubectl apply -f k8s-deployment.yml --validate=false
                     """
                 }
@@ -68,36 +70,36 @@ pipeline {
             steps {
                 script {
                     echo "Memastikan aplikasi berjalan di Kubernetes..."
-        
-                    // Set KUBECONFIG dan dapatkan NodePort dari service
+                    
+                    // Mendapatkan NodePort dari service
                     def NODE_PORT = bat(
                         script: """
                             @echo off
-                            set KUBECONFIG=C:\\Users\\admin\\.kube\\config
-                            kubectl get svc tubes-komputasiawan-service -o=jsonpath="{.spec.ports[0].nodePort}"
+                            set KUBECONFIG=${KUBECONFIG_PATH}
+                            kubectl get svc ${KUBE_SERVICE_NAME} -o=jsonpath="{.spec.ports[0].nodePort}"
                         """,
                         returnStdout: true
                     ).trim()
-        
+
                     if (!NODE_PORT?.isInteger()) {
                         error "Gagal mendapatkan NodePort. Pastikan service berjalan."
                     }
-        
+                    
                     echo "NodePort ditemukan: ${NODE_PORT}"
-        
-                     // Mendapatkan IP Minikube
+                    
+                    // Mendapatkan IP Minikube
                     echo "Mendapatkan IP Minikube..."
-                    def minikubeIp = bat(script: 'minikube ip', returnStdout: true).trim()
-                    echo "Minikube IP: ${minikubeIp}"
+                    def MINIKUBE_IP = bat(script: "minikube ip", returnStdout: true).trim()
+                    echo "Minikube IP: ${MINIKUBE_IP}"
                     
                     // Uji koneksi ke aplikasi dengan curl
-                    echo "Mengakses aplikasi di http://${minikubeIp}:${nodePort}"
-                    def response = bat(script: "curl -s http://${minikubeIp}:${nodePort}", returnStatus: true)
+                    echo "Mengakses aplikasi di http://${MINIKUBE_IP}:${NODE_PORT}"
+                    def RESPONSE = bat(script: "curl -s http://${MINIKUBE_IP}:${NODE_PORT}", returnStatus: true)
                     
-                    if (response != 0) {
-                        error "Aplikasi tidak dapat diakses di http://${minikubeIp}:${nodePort}"
+                    if (RESPONSE != 0) {
+                        error "Aplikasi tidak dapat diakses di http://${MINIKUBE_IP}:${NODE_PORT}"
                     } else {
-                        echo "Aplikasi berhasil diakses di http://${minikubeIp}:${nodePort}"
+                        echo "Aplikasi berhasil diakses di http://${MINIKUBE_IP}:${NODE_PORT}"
                     }
                 }
             }
@@ -109,8 +111,8 @@ pipeline {
                     echo "Membersihkan resource Kubernetes..."
                     bat """
                         set KUBECONFIG=${KUBECONFIG_PATH}
-                        kubectl delete deployment ${KUBE_DEPLOYMENT_NAME}
-                        kubectl delete service ${KUBE_SERVICE_NAME}
+                        kubectl delete deployment ${KUBE_DEPLOYMENT_NAME} || echo "Deployment sudah dihapus"
+                        kubectl delete service ${KUBE_SERVICE_NAME} || echo "Service sudah dihapus"
                     """
                 }
             }
