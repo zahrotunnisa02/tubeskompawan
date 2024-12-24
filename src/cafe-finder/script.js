@@ -21,6 +21,7 @@ function calculateDistance(lat1, lon1, lat2, lon2) {
   const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
   return R * c; // Jarak dalam kilometer
 }
+
 // Fungsi untuk Menampilkan Kafe dari Daftar
 function displayCafes(location) {
   const [userLat, userLon] = location;
@@ -45,18 +46,19 @@ function displayCafes(location) {
         return;
       }
 
-      // Tambahkan Kafe ke Peta dan Daftar
       nearbyCafes.forEach(cafe => {
-        // Tambahkan Marker ke Peta
+        // Debug: Cek struktur data cafe
+        console.log(cafe);  // Pastikan image_url ada di data
+
         const marker = L.marker([cafe.latitude, cafe.longitude])
-          .addTo(map)
-          .bindPopup(` 
-            <b>${cafe.name}</b><br>
-            Deskripsi: ${cafe.description || 'Deskripsi tidak tersedia.'}<br>
-            Jarak: ${cafe.distance.toFixed(2)} km<br>
-            <img src="${cafe.image_url}" alt="${cafe.name}" style="width: 100px; height: auto; margin-top: 10px;" /><br>
-            <a href="detail_cafe.php?id=${cafe.id}" class="btn btn-primary mt-2" target="_blank">Lihat Detail</a>
-          `);
+        .addTo(map)
+        .bindPopup(`
+          <b>${cafe.name}</b><br>
+          Deskripsi: ${cafe.description ? cafe.description.substring(0, 100) + '...' : 'Deskripsi tidak tersedia.'}<br>
+          Jarak: ${cafe.distance.toFixed(2)} km<br>
+          <img src="../${cafe.image_url}" alt="${cafe.name}" style="width: 100px; height: auto; margin-top: 10px;" /><br>
+          <button onclick="window.location.href='detail_cafe.php?id=${cafe.id}'" style="margin-top: 10px;">Detail Cafe</button>
+        `);
 
         // Tambahkan Kafe ke Daftar
         const li = document.createElement('li');
@@ -74,6 +76,8 @@ function displayCafes(location) {
       cafeList.innerHTML = '<li>Gagal memuat daftar kafe.</li>';
     });
 }
+
+
 // Fungsi untuk Menggunakan Lokasi Saat Ini
 function useCurrentLocation() {
   if (!navigator.geolocation) {

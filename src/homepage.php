@@ -15,7 +15,7 @@ include_once("header.php");
 <head>
 	<meta charset="UTF-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
-	<title>Document</title>
+	<title>Website Caffe's</title>
 </head>
 
 <body>
@@ -42,11 +42,13 @@ include_once("header.php");
 
 	.slide {
 		min-width: 100%;
-		height: auto;
+		height: 600px;
+		object-fit: cover;
+		object-position: center;
 	}
 </style>
 <script>
-	const images = ['../images/banner1.png', '../images/banner2.png', '../images/banner3.png']; // Array sumber gambar
+	const images = ['../images/foto1.jpg', '../images/urban.jpeg', '../images/foto3.jpeg']; // Array sumber gambar
 	const slideContainer = document.querySelector('.slides');
 
 	// Mendapatkan sumber gambar dari array dan membuat elemen img untuk setiap gambar

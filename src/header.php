@@ -9,9 +9,9 @@
     <div class="flex justify-between">
         <div class="flex align-center" style="gap: 20px;">
             <div class="rounded-sm width-min bg-blue" style="padding: 12px 12px">
-                <i class="fa-solid fa-cart-shopping" style="color: white; font-size: 18px"></i>
+                <i class="fas fa-coffee" style="color: white; font-size: 18px"></i>
             </div>
-            <p class="text-20 font-semibold">StarBoy Shop</p>
+            <p class="text-20 font-semibold">Caffee's</p>
         </div>
         <ul class="flex font-regular align-center" style="gap: 30px">
             <li>
@@ -26,11 +26,6 @@
             </li>
             <?php
                 if ($_SESSION['role'] == 1) {
-                    echo '<li>
-                            <a href="transaction.php">
-                                <p class="text-16 dark-gray">Transactions</p>
-                            </a>
-                          </li>';
                     echo '<li>
                             <a href="login_history.php">
                                 <p class="text-16 dark-gray">Logs</p>
