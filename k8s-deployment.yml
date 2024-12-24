@@ -14,7 +14,7 @@ spec:
     spec:
       containers:
       - name: tubes-komputasiawan
-        image: tubes-komputasiawan:latest # Ganti ${DOCKER_USER} dengan username Docker Hub Anda
+        image: ${DOCKER_USER}/tubes-komputasiawan:latest  # Replace this with the actual image or use Jenkins env vars
         ports:
         - containerPort: 80
 ---
