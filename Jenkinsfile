@@ -2,76 +2,145 @@ pipeline {
     agent any
 
     environment {
-        COMPOSE_FILE = "docker-compose.yml" // File docker-compose Anda
-        WEB_CONTAINER = "tubeskomputasiawan-web-1" // Nama container aplikasi PHP
-        DB_CONTAINER = "tubeskomputasiawan-db-1"  // Nama container MySQL
-        DB_USER = "root" // User database
-        DB_PASSWORD = "123456" // Password database
-        DB_NAME = "komputasi_awan" // Nama database
+        IMAGE_NAME = "tubes-komputasiawan"
+        CONTAINER_NAME = "tubes-komputasiawan-container"
+        PORT = "8082:80"
+        KUBE_DEPLOYMENT_NAME = "tubes-komputasiawan-deployment"
+        KUBE_SERVICE_NAME = "tubes-komputasiawan-service"
+        KUBECONFIG_PATH = "C:\\Users\\admin\\.kube\\config" // Ganti sesuai path kubeconfig Anda
     }
 
     stages {
-        stage('Checkout Code') {
+        stage('Login to Docker Registry dan Start Minikube') {
             steps {
-                echo 'Checking out source code...'
-                checkout scm
-            }
-        }
-
-        stage('Build and Start Services') {
-            steps {
-                echo 'Building and starting services with Docker Compose...'
                 script {
-                    // Hentikan jika container sedang berjalan
-                    bat 'docker-compose down || true'
-                    // Build ulang dan jalankan container
-                    bat 'docker-compose up -d --build'
-                }
-            }
-        }
-
-        stage('Run Application Tests') {
-            steps {
-                echo 'Testing if the application is running...'
-                script {
-                    // Tunggu container siap
-                    bat 'timeout /t 10 /nobreak'
-                    // Tes apakah endpoint web (port 8082) dapat diakses
-                    bat 'curl -f http://localhost:8082 || exit 1'
-                }
-            }
-        }
-
-        stage('Database Check') {
-            steps {
-                echo 'Verifying database initialization...'
-                script {
-                    // Cek koneksi ke database dan tabel
+                    echo "Login ke Docker Hub..."
+                    withCredentials([usernamePassword(credentialsId: 'docker-hub-credentials', usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
+                        bat "docker login -u ${DOCKER_USER} -p ${DOCKER_PASS}"
+                    }
+                    
+                    echo "Memulai Minikube..."
                     bat """
-                    docker exec ${DB_CONTAINER} mysql -u${DB_USER} -p${DB_PASSWORD} -e "USE ${DB_NAME}; batOW TABLES;" || exit 1
+                        minikube stop || echo "Minikube belum berjalan"
+                        minikube start
+                        minikube update-context
+
+                        minikube status
+
                     """
                 }
             }
         }
 
-        stage('Cleanup') {
+        stage('Build Docker Image') {
             steps {
-                echo 'Cleaning up Docker Compose services...'
-                bat 'docker-compose down -v' // Hentikan container dan hapus volume
+                script {
+                    echo "Membangun Docker image..."
+                    bat "docker build -t ${IMAGE_NAME}:latest ."
+                    echo "Memeriksa apakah Docker Compose sedang berjalan..."
+                    def isRunning = bat(script: "docker-compose ps -q", returnStdout: true).trim()
+            
+                    if (isRunning) {
+                        echo "Docker Compose sedang berjalan, menghentikan layanan..."
+                        bat "docker-compose down"
+                    }
+                    echo "Menjalankan Docker Compose..."
+                    // Jalankan Docker Compose
+                    bat "docker-compose up -d"
+                }
+            }
+        }
+
+        stage('Push Docker Image to Registry') {
+            steps {
+                script {
+                    echo "Mendorong Docker image ke registry..."
+                    withCredentials([usernamePassword(credentialsId: 'docker-hub-credentials', usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
+                        bat """
+                            docker tag ${IMAGE_NAME}:latest ${DOCKER_USER}/${IMAGE_NAME}:latest
+                            docker push ${DOCKER_USER}/${IMAGE_NAME}:latest
+                        """
+                    }
+                }
+            }
+        }
+
+        stage('Deploy Application to Kubernetes') {
+            steps {
+                script {
+                    echo "Melakukan deployment ke Kubernetes..."
+                    bat """
+                        set KUBECONFIG=${KUBECONFIG_PATH}
+                        kubectl config use-context minikube
+                        kubectl cluster-info
+                        kubectl apply -f k8s-deployment.yml --validate=false
+                    """
+                }
+            }
+        }
+
+        stage('Test Kubernetes Application') {
+            steps {
+                script {
+                    echo "Memastikan aplikasi berjalan di Kubernetes..."
+                    
+                    // Mendapatkan NodePort dari service
+                    def NODE_PORT = bat(
+                        script: """
+                            @echo off
+                            set KUBECONFIG=${KUBECONFIG_PATH}
+                            kubectl get svc ${KUBE_SERVICE_NAME} -o=jsonpath="{.spec.ports[0].nodePort}"
+                        """,
+                        returnStdout: true
+                    ).trim()
+
+                    if (!NODE_PORT?.isInteger()) {
+                        error "Gagal mendapatkan NodePort. Pastikan service berjalan."
+                    }
+                    
+                    echo "NodePort ditemukan: ${NODE_PORT}"
+                    
+                    // Mendapatkan IP Minikube
+                    echo "Mendapatkan IP Minikube..."
+                    def MINIKUBE_IP = bat(script: "minikube ip", returnStdout: true).trim()
+                    echo "Minikube IP: ${MINIKUBE_IP}"
+                    
+                    // Uji koneksi ke aplikasi dengan curl
+                    echo "Mengakses aplikasi di http://${MINIKUBE_IP}:${NODE_PORT}"
+                    def RESPONSE = bat(script: "curl -s http://${MINIKUBE_IP}:${NODE_PORT}", returnStatus: true)
+                    
+                    if (RESPONSE != 0) {
+                        error "Aplikasi tidak dapat diakses di http://${MINIKUBE_IP}:${NODE_PORT}"
+                    } else {
+                        echo "Aplikasi berhasil diakses di http://${MINIKUBE_IP}:${NODE_PORT}"
+                    }
+                }
+            }
+        }
+
+        stage('Clean Up Kubernetes Resources') {
+            steps {
+                script {
+                    echo "Membersihkan resource Kubernetes..."
+                    bat """
+                        set KUBECONFIG=${KUBECONFIG_PATH}
+                        kubectl delete deployment ${KUBE_DEPLOYMENT_NAME} || echo "Deployment sudah dihapus"
+                        kubectl delete service ${KUBE_SERVICE_NAME} || echo "Service sudah dihapus"
+                    """
+                }
             }
         }
     }
 
     post {
         always {
-            echo 'Pipeline completed.'
-            script {
-                // Pastikan layanan dihentikan
-                bat 'docker-compose down -v || true'
-            }
+            echo 'Pipeline selesai dijalankan.'
+        }
+        success {
+            echo 'Pipeline berhasil dijalankan.'
         }
         failure {
-            echo 'Pipeline failed.'
+            echo 'Pipeline gagal dijalankan.'
         }
     }
 }

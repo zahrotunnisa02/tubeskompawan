@@ -1,0 +1,32 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: tubes-komputasiawan-deployment
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: tubes-komputasiawan-deployment
+  template:
+    metadata:
+      labels:
+        app: tubes-komputasiawan-deployment
+    spec:
+      containers:
+      - name: tubes-komputasiawan
+        image: tubes-komputasiawan:latest # Ganti ${DOCKER_USER} dengan username Docker Hub Anda
+        ports:
+        - containerPort: 80
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: tubes-komputasiawan-service
+spec:
+  selector:
+    app: tubes-komputasiawan-deployment
+  ports:
+  - protocol: TCP
+    port: 8082
+    targetPort: 80
+  type: NodePort

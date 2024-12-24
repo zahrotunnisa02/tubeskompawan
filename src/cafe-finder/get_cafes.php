@@ -10,8 +10,8 @@ if ($mysqli->connect_error) {
     die("Connection failed: " . $mysqli->connect_error);
 }
 
-// Query untuk mengambil data kafe
-$sql = "SELECT name, latitude, longitude FROM cafes";
+// Query untuk mengambil data kafe (termasuk deskripsi)
+$sql = "SELECT name, latitude, longitude, description FROM cafes";
 $result = $mysqli->query($sql);
 
 // Jika ada data
@@ -21,7 +21,8 @@ if ($result->num_rows > 0) {
         $cafes[] = [
             'name' => $row['name'],
             'latitude' => $row['latitude'],
-            'longitude' => $row['longitude']
+            'longitude' => $row['longitude'],
+            'description' => $row['description'] // Menambahkan deskripsi kafe
         ];
     }
     // Mengembalikan data kafe dalam format JSON
