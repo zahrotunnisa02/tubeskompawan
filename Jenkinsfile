@@ -9,7 +9,7 @@ pipeline {
     }
 
     stages {
-        stage('Login to Docker Registry dan Start Minikube') {
+        stage('Login to Docker Registry') {
             steps {
                 script {
                     echo "Login ke Docker Hub..."
@@ -61,7 +61,7 @@ pipeline {
             }
         }
 
-        stage('Test Notifikasi Discord') {
+        stage('Notifikasi Discord') {
             steps {
                 script {
                     def message = [
