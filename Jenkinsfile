@@ -5,9 +5,7 @@ pipeline {
         IMAGE_NAME = "tubes-komputasiawan"
         CONTAINER_NAME = "tubes-komputasiawan-container"
         PORT = "8082:80"
-        KUBE_DEPLOYMENT_NAME = "tubes-komputasiawan-deployment"
-        KUBE_SERVICE_NAME = "tubes-komputasiawan-service"
-        KUBECONFIG_PATH = "C:\\Users\\admin\\.kube\\config" // Ganti sesuai path kubeconfig Anda
+        DISCORD_WEBHOOK = "https://discord.com/api/webhooks/1326360114302685245/Ifee6RXA7sX3hYb1zzMtzsCsu7SFGJNvevD9CKq9FbK6nERV2mgBuXp_uBBJrJEK_M-H"
     }
 
     stages {
@@ -18,16 +16,6 @@ pipeline {
                     withCredentials([usernamePassword(credentialsId: 'docker-hub-credentials', usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
                         bat "docker login -u ${DOCKER_USER} -p ${DOCKER_PASS}"
                     }
-                    
-                    echo "Memulai Minikube..."
-                    bat """
-                        minikube stop || echo "Minikube belum berjalan"
-                        minikube start
-                        minikube update-context
-
-                        minikube status
-
-                    """
                 }
             }
         }
@@ -65,68 +53,36 @@ pipeline {
             }
         }
 
-        stage('Deploy Application to Kubernetes') {
+        stage('Login Discord') {
             steps {
                 script {
-                    echo "Melakukan deployment ke Kubernetes..."
-                    bat """
-                        set KUBECONFIG=${KUBECONFIG_PATH}
-                        kubectl config use-context minikube
-                        kubectl cluster-info
-                        kubectl apply -f k8s-deployment.yml --validate=false
-                    """
+                    echo "Login ke Discord Webhook..."
                 }
             }
         }
 
-        stage('Test Kubernetes Application') {
+        stage('Test Notifikasi Discord') {
             steps {
                 script {
-                    echo "Memastikan aplikasi berjalan di Kubernetes..."
-                    
-                    // Mendapatkan NodePort dari service
-                    def NODE_PORT = bat(
-                        script: """
-                            @echo off
-                            set KUBECONFIG=${KUBECONFIG_PATH}
-                            kubectl get svc ${KUBE_SERVICE_NAME} -o=jsonpath="{.spec.ports[0].nodePort}"
-                        """,
-                        returnStdout: true
-                    ).trim()
-
-                    if (!NODE_PORT?.isInteger()) {
-                        error "Gagal mendapatkan NodePort. Pastikan service berjalan."
-                    }
-                    
-                    echo "NodePort ditemukan: ${NODE_PORT}"
-                    
-                    // Mendapatkan IP Minikube
-                    echo "Mendapatkan IP Minikube..."
-                    def MINIKUBE_IP = bat(script: "minikube ip", returnStdout: true).trim()
-                    echo "Minikube IP: ${MINIKUBE_IP}"
-                    
-                    // Uji koneksi ke aplikasi dengan curl
-                    echo "Mengakses aplikasi di http://${MINIKUBE_IP}:${NODE_PORT}"
-                    def RESPONSE = bat(script: "curl -s http://${MINIKUBE_IP}:${NODE_PORT}", returnStatus: true)
-                    
-                    if (RESPONSE != 0) {
-                        error "Aplikasi tidak dapat diakses di http://${MINIKUBE_IP}:${NODE_PORT}"
-                    } else {
-                        echo "Aplikasi berhasil diakses di http://${MINIKUBE_IP}:${NODE_PORT}"
-                    }
+                    def message = [
+                        content: "Pipeline berhasil dijalankan! 🎉",
+                        username: "Jenkins Bot"
+                    ]
+                    httpRequest(
+                        httpMode: 'POST',
+                        url: DISCORD_WEBHOOK,
+                        requestBody: new groovy.json.JsonBuilder(message).toString(),
+                        contentType: 'APPLICATION_JSON'
+                    )
                 }
             }
         }
 
-        stage('Clean Up Kubernetes Resources') {
+        stage('Bersihkan Docker') {
             steps {
                 script {
-                    echo "Membersihkan resource Kubernetes..."
-                    bat """
-                        set KUBECONFIG=${KUBECONFIG_PATH}
-                        kubectl delete deployment ${KUBE_DEPLOYMENT_NAME} || echo "Deployment sudah dihapus"
-                        kubectl delete service ${KUBE_SERVICE_NAME} || echo "Service sudah dihapus"
-                    """
+                    echo "Membersihkan container Docker yang tidak aktif..."
+                    bat "docker system prune -f"
                 }
             }
         }
@@ -137,10 +93,32 @@ pipeline {
             echo 'Pipeline selesai dijalankan.'
         }
         success {
-            echo 'Pipeline berhasil dijalankan.'
+            script {
+                def message = [
+                    content: "Pipeline berhasil dieksekusi dengan sukses! ✅",
+                    username: "Jenkins Bot"
+                ]
+                httpRequest(
+                    httpMode: 'POST',
+                    url: DISCORD_WEBHOOK,
+                    requestBody: new groovy.json.JsonBuilder(message).toString(),
+                    contentType: 'APPLICATION_JSON'
+                )
+            }
         }
         failure {
-            echo 'Pipeline gagal dijalankan.'
+            script {
+                def message = [
+                    content: "Pipeline gagal dijalankan. ❌",
+                    username: "Jenkins Bot"
+                ]
+                httpRequest(
+                    httpMode: 'POST',
+                    url: DISCORD_WEBHOOK,
+                    requestBody: new groovy.json.JsonBuilder(message).toString(),
+                    contentType: 'APPLICATION_JSON'
+                )
+            }
         }
     }
 }
